@@ -10,7 +10,7 @@ library(data.table)
 
 ##load data
 data1 = readRDS("data/GSE63818-GPL16791.rds")
-data1 = readRDS(gzcon(url("http://imlspenticton.uzh.ch/robinson_lab/conquer/data-mae/GSE63818-GPL16791.rds")))
+#data1 = readRDS(gzcon(url("http://imlspenticton.uzh.ch/robinson_lab/conquer/data-mae/GSE63818-GPL16791.rds")))
 
 ##extract 
 data1_tx = experiments(data1)[["tx"]] #transcripts
@@ -43,30 +43,25 @@ save(boots, file = boots_name)
 load(boots_name)
 
 ##create gene sets
-fData2 = as.data.table(fData[,1:2])
-setkey(fData2, gene)
-fData2$transcript = as.character(fData2$transcript)
-fData2$gene = as.character(fData2$gene)
-
-genes = unique(fData2$gene)
-
-sets = vector("list", length(unique(fData2$gene)))
-#for (i in genes){
-#  sets[[i]] = test$transcript[test$gene == i]
-#}
+genes = unique(mcols(sca)$gene)
+sets = vector("list", length(genes))
+names(sets) = genes
 
 for (i in genes){
-  sets[[i]] = which(mcols(sca2)$gene == i)
+  sets[[i]] = which(mcols(sca)$gene == i)
 }
+sets_name = paste0("tmp/gsea_", Sys.Date(), ".RData")
+save(sets, file = sets_name)
+load(sets_name)
 
-sets = sets[names(sets) != ""]
-sets = sets[lapply(sets,length)>0]
+##gsea
 gsea = gseaAfterBoot(zlmCond, boots, sets, CoefficientHypothesis('source_name_ch1Somatic Cells'))
+gsea_name = paste0("tmp/sets_", Sys.Date(), ".RData")
+save(gsea, file = gsea_name)
+load(gsea_name)
 
-load("sets.RData")
-load("gsea_7-1.RData")
-z_stat_comb <- summary(gsea)
-sigModules <- z_stat_comb[combined_adj<.05]
-gseaTable <- melt(sigModules[,.(set, disc_Z, cont_Z, combined_Z)], id.vars='set')
-
+z_stat_comb <- summary(gsea) #all genes
+sigModules <- z_stat_comb[combined_adj<.05] #significant genes
+hist(z_stat_comb$combined_P, main = "Distribution of MAST-TSEA p values",
+     xlab = "p")
 
