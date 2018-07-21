@@ -29,9 +29,11 @@ cdr2 = colSums(assay(sca)>0)
 colData(sca)$cngeneson = scale(cdr2)
 
 sca = subset(sca, sca$characteristics_ch1 == "developmental stage: 7 week gestation")
+sca_name = paste0("tmp/sca_", Sys.Date(), ".RData")
+save(sca, file = sca_name)
 
 ##run model
-zlmCond <- zlm(~source_name_ch1 + cngeneson, sca)
+zlmCond = zlm(~source_name_ch1 + cngeneson, sca)
 zlm_name = paste0("tmp/zlm_", Sys.Date(), ".RData")
 save(zlmCond, file = zlm_name)
 load(zlm_name)
@@ -50,13 +52,13 @@ names(sets) = genes
 for (i in genes){
   sets[[i]] = which(mcols(sca)$gene == i)
 }
-sets_name = paste0("tmp/gsea_", Sys.Date(), ".RData")
+sets_name = paste0("tmp/sets_", Sys.Date(), ".RData")
 save(sets, file = sets_name)
 load(sets_name)
 
 ##gsea
 gsea = gseaAfterBoot(zlmCond, boots, sets, CoefficientHypothesis('source_name_ch1Somatic Cells'))
-gsea_name = paste0("tmp/sets_", Sys.Date(), ".RData")
+gsea_name = paste0("tmp/gsea_", Sys.Date(), ".RData")
 save(gsea, file = gsea_name)
 load(gsea_name)
 
