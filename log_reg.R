@@ -19,23 +19,26 @@ tpm = t(assays(data1_tx)[["TPM"]]) #design matrix
 cell_select = cData$geo_accession %in% getwellKey(sca)
 tpm = tpm[cell_select, as.character(mcols(sca)$transcript)] #filter 7 week, select genes
 y = as.numeric(cData$source_name_ch1[cell_select]) - 1 #0/1 binary response vector
+
+for (j in 6:10){
 y_samp = sample(y)
-load(sets_name)
+#load(sets_name)
 
 
 
 regs = rep(NA, length(sets)) #init vector for storing results
 #LR test for full model vs just mean
 for (i in 1:length(sets)){
-  regs[i] = lrtest(glm(y~.,data = data.frame(tpm[,sets[[i]]]), family = binomial))[2,5] 
+  regs[i] = lrtest(glm(y_samp~.,data = data.frame(tpm[,sets[[i]]]), family = binomial))[2,5] 
 }
-prop.table(table(regs < 0.05))
+prop.table(table(regs < 0.05))[2] -> pval[j]
+}
 adjusted = p.adjust(regs, 'fdr')
 
 out1 = data.frame(gene = names(sets), p = regs, fdr = adjusted) #output
 out1 = out1[out1$fdr<0.05,] #select top genes
 
-
+hist(regs, main = "Distribution of logistic regression p-values", xlab = "p")
 #venn.diagram(list(out1$gene, sigModules$set, fcHurdleSig_g$primerid), 
 #             "test.png", 
 #             category.names = c("Logistic regression", "MAST Transcript GSEA", "MAST Genes"),

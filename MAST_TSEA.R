@@ -10,7 +10,7 @@ library(data.table)
 
 ##load data
 data1 = readRDS("data/GSE63818-GPL16791.rds")
-#data1 = readRDS(gzcon(url("http://imlspenticton.uzh.ch/robinson_lab/conquer/data-mae/GSE63818-GPL16791.rds")))
+#download from "http://imlspenticton.uzh.ch/robinson_lab/conquer/data-mae/GSE63818-GPL16791.rds"
 
 ##extract 
 data1_tx = experiments(data1)[["tx"]] #transcripts
@@ -31,6 +31,7 @@ colData(sca)$cngeneson = scale(cdr2)
 sca = subset(sca, sca$characteristics_ch1 == "developmental stage: 7 week gestation")
 sca_name = paste0("tmp/sca_", Sys.Date(), ".RData")
 save(sca, file = sca_name)
+colData(sca)$source_name_ch1 = sample(colData(sca)$source_name_ch1) 
 
 ##run model
 zlmCond = zlm(~source_name_ch1 + cngeneson, sca)
@@ -39,7 +40,7 @@ save(zlmCond, file = zlm_name)
 load(zlm_name)
 
 ##bootstrap
-boots <- bootVcov1(zlmCond, R = 50)
+boots = bootVcov1(zlmCond, R = 50)
 boots_name = paste0("tmp/boots_", Sys.Date(), ".RData")
 save(boots, file = boots_name)
 load(boots_name)
@@ -64,6 +65,6 @@ load(gsea_name)
 
 z_stat_comb <- summary(gsea) #all genes
 sigModules <- z_stat_comb[combined_adj<.05] #significant genes
-hist(z_stat_comb$combined_P, main = "Distribution of MAST-TSEA p values",
+hist(z_stat_comb$combined_P, main = "Distribution of MAST-TSEA p-values",
      xlab = "p")
 
