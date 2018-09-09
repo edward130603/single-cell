@@ -14,13 +14,12 @@ cData = colData(data1) #column info
 fData = rowData(data1@ExperimentList$tx) #transcript info
 load(sca_name) #from MAST_GSE64016.R
 
-
 tpm = t(assays(data1_tx)[["TPM"]]) #design matrix
 cell_select = cData$geo_accession %in% getwellKey(sca)
 tpm = tpm[cell_select, as.character(mcols(sca)$transcript)] #select genes
 y = as.numeric(droplevels(cData$source_name_ch1[cell_select])) - 1 #0/1 binary response vector
-
 y_samp = sample(y)
+
 load(sets_name) #from MAST_GSE64016.R
 
 regs = rep(NA, length(sets)) #init vector for storing results
@@ -44,3 +43,14 @@ for (i in 1:length(sets)){
   regs2[i] = lrtest(glm(y_samp2~.,data = data.frame(tpm[1:60,sets[[i]]]), family = binomial))[2,5] 
 }
 hist(regs2, main = "Distribution of logistic regression p-values", xlab = "p")
+
+##all cells
+y2 = sample(c(0,1), size = 372, replace = T)
+
+regs3 = rep(NA, length(sets)) #init vector for storing results
+#LR test for full model vs just mean
+for (i in 1:length(sets)){
+  regs3[i] = lrtest(glm(y2~.,data = data.frame(tpm[,sets[[i]]]), family = binomial))[2,5] 
+}
+hist(regs3, main = "Distribution of logistic regression p-values", xlab = "p")
+
