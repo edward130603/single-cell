@@ -142,12 +142,21 @@ out1$mast_transcript3 = fcHurdle2$fisher
 out1$mast_transcript4 = fcHurdle2$lancaster
 with(out1 %>% filter(keep), table(de2, mast_transcript))
 with(out1 %>% filter(keep), table(de2, p.adjust(mast_transcript2, method = "fdr") < 0.05))
+with(out1, table(de, p.adjust(mast_transcript2, method = "fdr") < 0.05))
 with(out1 %>% filter(keep), table(de2, p.adjust(mast_transcript3, method = "fdr") < 0.05))
+with(out1, table(de, p.adjust(mast_transcript3, method = "fdr") < 0.05))
 with(out1 %>% filter(keep), table(de2, p.adjust(mast_transcript4, method = "fdr") < 0.05))
+with(out1, table(de, p.adjust(mast_transcript4, method = "fdr") < 0.05))
 roc(de2~mast_transcript2, out1 %>% filter(keep), plot = T,
     print.auc = T, print.auc.x = 0.1, print.auc.y = 0.1,
     xlim = c(0,1))
+roc(de~mast_transcript2, out1, plot = T,
+    print.auc = T, print.auc.x = 0.1, print.auc.y = 0.1,
+    xlim = c(0,1))
 roc(de2~mast_transcript3, out1 %>% filter(keep), plot = T,
+    print.auc = T, print.auc.x = 0.1, print.auc.y = 0.1,
+    xlim = c(0,1))
+roc(de~mast_transcript3, out1, plot = T,
     print.auc = T, print.auc.x = 0.1, print.auc.y = 0.1,
     xlim = c(0,1))
 roc(de2~mast_transcript4, out1 %>% filter(keep), plot = T,
@@ -181,3 +190,42 @@ roc(de2~mast, out1 %>% filter(keep), plot = T,
     print.auc = T, print.auc.x = 0.1, print.auc.y = 0.1,
     xlim = c(0,1))
 save(out1, file = "tmp/out1_2018-07-31.RData")
+
+##removing freq < 0.2 genes
+fData$freq = freq(sca)
+fData%>%
+  as.tibble() %>%
+  group_by(Set) %>%
+  filter(!all(freq<0.2)) %>%
+  select(Set) %>%
+  unique() ->
+  freq
+
+out2 = merge(out1, freq, by = "Set")
+
+roc(de~mast, out2, plot = T,
+    print.auc = T, print.auc.x = 0.1, print.auc.y = 0.1,
+    xlim = c(0,1))
+roc(de~mast_tsea, out2, plot = T,
+    print.auc = T, print.auc.x = 0.1, print.auc.y = 0.1,
+    xlim = c(0,1))
+roc(de~mast_transcript2, out2, plot = T,
+    print.auc = T, print.auc.x = 0.1, print.auc.y = 0.1,
+    xlim = c(0,1))
+roc(de~log_reg, out2, plot = T,
+    print.auc = T, print.auc.x = 0.1, print.auc.y = 0.1,
+    xlim = c(0,1))
+
+##p-values
+lengths = data.frame(Set = names(sets),length =  sapply(sets, length))
+out1 = merge(out1, lengths, by = "Set")
+out1$`Number of Transcripts` = ifelse(out1$length <= 5, as.character(out1$length), "6+")
+ggplot(data = out1, aes(x = mast_transcript2, y = log_reg))+
+  geom_point(aes(alpha = 0.1, color = `Number of Transcripts`), shape = 16) +
+  guides(alpha = F)+
+  scale_color_brewer() +
+  labs(x = "MAST-Transcript", y = "Logistic Regression")
+ggplot(data = out1, aes(x = mast_transcript2, y = log_reg))+
+  geom_point(aes(alpha = 0.1), shape = 16) +
+  guides(alpha = F)+
+  labs(x = "MAST-Transcript", y = "Logistic Regression")
